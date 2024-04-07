@@ -1,6 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { Logger } from "./log";
+
+export type Logger = {
+  info?: (msg: string) => void;
+  warn?: (msg: string) => void;
+  error?: (msg: string) => void;
+};
 
 type Entry = {
   timestamp: number;
@@ -103,10 +108,6 @@ function createProxy<T extends object>(
 ): T {
   if (proxyCache[path]) {
     return proxyCache[path];
-  }
-
-  if (typeof api !== "object") {
-    return api;
   }
 
   const proxy = new Proxy(api, {

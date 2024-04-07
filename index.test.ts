@@ -2,7 +2,11 @@ import fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
 import { cacheProxy } from "./index";
 
-jest.mock("fs");
+let readFileSync = jest.fn(() => "");
+let existsSync = jest.fn<(typeof fs)["existsSync"]>(() => false);
+let writeFileSync = jest.fn(() => {});
+let mkdirSync = jest.fn<(typeof fs)["mkdirSync"]>((path) => {});
+
 jest.useFakeTimers();
 
 class NestedNestedTest {
@@ -28,8 +32,15 @@ class Test {
     return this.mainCalls++;
   }
 }
+
 describe("cacheProxy", () => {
-  beforeEach(() => {});
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(fs, "readFileSync").mockImplementation(readFileSync);
+    jest.spyOn(fs, "existsSync").mockImplementation(existsSync);
+    jest.spyOn(fs, "writeFileSync").mockImplementation(writeFileSync);
+    jest.spyOn(fs, "mkdirSync").mockImplementation(mkdirSync);
+  });
   it("cache calls", () => {
     expect(true).toBeTruthy();
     let hit = 0;
@@ -118,5 +129,25 @@ describe("cacheProxy", () => {
     jest.advanceTimersByTime(301);
     expect(c.nested.nested.bar()).toBe(1);
     expect(c.nested.nested.bar()).toBe(1);
+  });
+
+  jest.mock("fs");
+
+  it("must persist the cache", () => {
+    const t = new Test();
+    existsSync.mockReturnValue(true);
+    readFileSync.mockReturnValue('{"/main: []": {"value": 1, "expire": 100}}');
+    const c = cacheProxy(t);
+    expect(c.main()).toBe(1);
+    expect(c.main()).toBe(1);
+  });
+
+  it("must handle broken cache", () => {
+    const t = new Test();
+    existsSync.mockReturnValue(true);
+    readFileSync.mockReturnValue("garbage");
+    const c = cacheProxy(t);
+    expect(c.main()).toBe(0);
+    expect(c.main()).toBe(0);
   });
 });
