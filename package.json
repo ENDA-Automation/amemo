@@ -1,0 +1,25 @@
+{
+  "name": "amemo",
+  "version": "1.0.0",
+  "description": "A memoization library for JavaScript",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "dev": "esbuild *.ts --sourcemap --outdir=. --format=esm --watch"
+  },
+  "keywords": [],
+  "author": "Engin Aydogan <engin.aydogan@enda.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.24.4",
+    "@babel/preset-env": "^7.24.4",
+    "@babel/preset-typescript": "^7.24.1",
+    "@jest/globals": "^29.7.0",
+    "babel-jest": "^29.7.0",
+    "esbuild": "^0.20.2",
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.4"
+  }
+}
