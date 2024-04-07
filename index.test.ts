@@ -1,10 +1,13 @@
 import fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
-import { cacheProxy } from "./index.js";
+import { cacheProxy } from "./index";
+
+jest.mock("fs");
+jest.useFakeTimers();
 
 class NestedNestedTest {
   public barCalls = 0;
-  public bar() {
+  public bar(_ = "bar") {
     return this.barCalls++;
   }
 }
@@ -12,7 +15,7 @@ class NestedNestedTest {
 class NestedTest {
   public nested = new NestedNestedTest();
   public fooCalls = 0;
-  public foo() {
+  public foo(_ = "foo") {
     return this.fooCalls++;
   }
 }
@@ -20,19 +23,13 @@ class NestedTest {
 class Test {
   public nested = new NestedTest();
   public mainCalls = 0;
-  public main() {
+  public main(_: string = "foo") {
     console.log("main called", this.mainCalls);
     return this.mainCalls++;
   }
 }
 describe("cacheProxy", () => {
-  beforeEach(() => {
-    jest.mock("fs", () => ({
-      existsSync: () => false,
-      readFileSync: () => "",
-      writeFileSync: () => {},
-    }));
-  });
+  beforeEach(() => {});
   it("cache calls", () => {
     expect(true).toBeTruthy();
     let hit = 0;
@@ -59,5 +56,67 @@ describe("cacheProxy", () => {
     expect(t.mainCalls).toBe(1);
     expect(t.nested.fooCalls).toBe(0);
     expect(t.nested.nested.barCalls).toBe(0);
+    expect(c.main("invalidate")).toBe(1);
+    expect(c.nested.foo()).toBe(0);
+    expect(c.nested.foo()).toBe(0);
+    expect(c.nested.foo()).toBe(0);
+    expect(c.nested.foo("invalidate")).toBe(1);
+    expect(c.nested.foo("invalidate again")).toBe(2);
+    expect(c.nested.foo("invalidate")).toBe(1);
+    expect(c.nested.foo()).toBe(0);
+    expect(c.nested.foo("invalidate again")).toBe(2);
+    expect(c.nested.nested.bar()).toBe(0);
+    expect(c.nested.nested.bar()).toBe(0);
+    expect(c.nested.nested.bar("invalidate")).toBe(1);
+    expect(c.nested.nested.bar("invalidate again")).toBe(2);
+    expect(c.nested.nested.bar("invalidate")).toBe(1);
+    expect(c.nested.nested.bar()).toBe(0);
+    expect(c.nested.nested.bar("invalidate again")).toBe(2);
+  });
+
+  it("should respect the default expire", () => {
+    const t = new Test();
+    const c = cacheProxy(t, {
+      defaultExpire: 100,
+    });
+    expect(c.main()).toBe(0);
+    expect(c.main()).toBe(0);
+    jest.advanceTimersByTime(101);
+    expect(c.main()).toBe(1);
+    expect(c.main()).toBe(1);
+  });
+
+  it("should respect the path expire", () => {
+    const t = new Test();
+    const c = cacheProxy(t, {
+      pathExpire: {
+        "/main": 100,
+        "/nested/foo": 200,
+        "/nested/nested/bar": 300,
+      },
+    });
+    expect(c.main()).toBe(0);
+    expect(c.main()).toBe(0);
+    jest.advanceTimersByTime(101);
+    expect(c.main()).toBe(1);
+    expect(c.main()).toBe(1);
+
+    expect(c.nested.foo()).toBe(0);
+    expect(c.nested.foo()).toBe(0);
+    jest.advanceTimersByTime(101);
+    expect(c.nested.foo()).toBe(0);
+    expect(c.nested.foo()).toBe(0);
+    jest.advanceTimersByTime(101);
+    expect(c.nested.foo()).toBe(1);
+    expect(c.nested.foo()).toBe(1);
+
+    expect(c.nested.nested.bar()).toBe(0);
+    expect(c.nested.nested.bar()).toBe(0);
+    jest.advanceTimersByTime(101);
+    expect(c.nested.nested.bar()).toBe(0);
+    expect(c.nested.nested.bar()).toBe(0);
+    jest.advanceTimersByTime(301);
+    expect(c.nested.nested.bar()).toBe(1);
+    expect(c.nested.nested.bar()).toBe(1);
   });
 });

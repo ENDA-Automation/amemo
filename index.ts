@@ -13,6 +13,8 @@ export type CacheStoreOpts = {
   log?: Logger;
 };
 
+export const NotFound = Symbol("NotFound");
+
 export class CacheStore {
   private cache: Record<string, Entry> = {};
   public readonly cacheFile: string;
@@ -43,10 +45,10 @@ export class CacheStore {
   get(key: string, expire: number) {
     const entry = this.cache[key];
     if (!entry) {
-      return null;
+      return NotFound;
     }
     if (Date.now() - entry.timestamp > expire) {
-      return null;
+      return NotFound;
     }
     return entry.value;
   }
@@ -96,19 +98,25 @@ function createProxy<T extends object>(
   cache: CacheStore,
   opts: CacheProxyOpts,
   proxyCache: ProxyCache<T>,
+  wrapperCache: Record<string, any>,
   path = ""
 ): T {
   if (proxyCache[path]) {
     return proxyCache[path];
   }
+
   if (typeof api !== "object") {
     return api;
   }
+
   const proxy = new Proxy(api, {
     get(target, prop /*, receiver*/) {
       const currentPath = path + "/" + prop.toString();
       const p = target[prop as keyof T];
       if (typeof p === "function") {
+        if (wrapperCache[currentPath]) {
+          return wrapperCache[currentPath];
+        }
         const binded = p.bind(target);
         const {
           defaultExpire = 1 * DAY,
@@ -117,10 +125,10 @@ function createProxy<T extends object>(
           onMiss = () => {},
         } = opts;
         const expire = pathExpire[currentPath] ?? defaultExpire;
-        return function (...args: any[]) {
+        const wrapped = function (...args: any[]) {
           const key = currentPath + ": " + JSON.stringify(args);
           const cached = cache.get(key, expire);
-          if (cached) {
+          if (cached !== NotFound) {
             onHit(key, args);
             return cached;
           }
@@ -130,12 +138,15 @@ function createProxy<T extends object>(
           onMiss(key, args);
           return result;
         };
+        wrapperCache[currentPath] = wrapped;
+        return wrapped;
       }
       return createProxy(
         target[prop as keyof T] as any,
         cache,
         opts,
         proxyCache,
+        wrapperCache,
         currentPath
       );
     },
@@ -149,5 +160,5 @@ export function cacheProxy<T extends object>(
   opts: CacheProxyOpts = {}
 ): T {
   const cache = new CacheStore(opts.cacheStoreOpts);
-  return createProxy(api, cache, opts, {});
+  return createProxy(api, cache, opts, {}, {});
 }
