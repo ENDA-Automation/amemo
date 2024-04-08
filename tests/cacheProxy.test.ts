@@ -11,6 +11,7 @@ jest.useFakeTimers();
 
 class NestedNestedTest {
   public barCalls = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public bar(_ = "bar") {
     return this.barCalls++;
   }
@@ -19,6 +20,7 @@ class NestedNestedTest {
 class NestedTest {
   public nested = new NestedNestedTest();
   public fooCalls = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async foo(_ = "foo") {
     return this.fooCalls++;
   }
@@ -27,6 +29,7 @@ class NestedTest {
 class Test {
   public nested = new NestedTest();
   public mainCalls = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public main(_: string = "foo") {
     return this.mainCalls++;
   }

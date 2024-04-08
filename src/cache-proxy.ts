@@ -2,7 +2,9 @@ import { CacheStore, DAY, NotFound } from "./cache-store";
 import { FileCacheStore } from "./file-cache-store";
 
 export type CacheProxyOpts = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onHit?: (key: string, args: any[]) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onMiss?: (key: string, args: any[]) => void;
   // Default expiration time in milliseconds
   defaultExpire?: number;
@@ -18,7 +20,7 @@ function createProxy<T extends object>(
   cache: CacheStore,
   opts: CacheProxyOpts,
   proxyCache: ProxyCache<T>,
-  wrapperCache: Record<string, any>,
+  wrapperCache: Record<string, unknown>,
   path = "",
 ): T {
   if (proxyCache[path]) {
@@ -41,6 +43,7 @@ function createProxy<T extends object>(
           onMiss = () => {},
         } = opts;
         const expire = pathExpire[currentPath] ?? defaultExpire;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const wrapped = function (...args: any[]) {
           const key = currentPath + ": " + JSON.stringify(args);
           const cached = cache.get(key, expire);
@@ -57,8 +60,12 @@ function createProxy<T extends object>(
         wrapperCache[currentPath] = wrapped;
         return wrapped;
       }
+
+      if (!(p instanceof Object)) {
+        return p;
+      }
       return createProxy(
-        target[prop as keyof T] as any,
+        target[prop as keyof T] as object,
         cache,
         opts,
         proxyCache,
