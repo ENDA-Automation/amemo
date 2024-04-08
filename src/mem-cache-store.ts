@@ -1,7 +1,7 @@
 import { CacheStore, Entry, NotFound } from "./cache-store";
 
 export class MemCacheStore implements CacheStore {
-  constructor(private readonly cache: Record<string, Entry> = {}) {}
+  constructor(protected cache: Record<string, Entry> = {}) {}
 
   get(key: string, expire: number) {
     const entry = this.cache[key];
@@ -21,7 +21,5 @@ export class MemCacheStore implements CacheStore {
     };
   }
 
-  save() {
-    // do nothing
-  }
+  save() {}
 }

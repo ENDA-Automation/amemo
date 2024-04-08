@@ -15,21 +15,29 @@ declare module "cache-store" {
     export const DAY: number;
     export const WEEK: number;
 }
+declare module "mem-cache-store" {
+    import { CacheStore, Entry } from "cache-store";
+    export class MemCacheStore implements CacheStore {
+        protected cache: Record<string, Entry>;
+        constructor(cache?: Record<string, Entry>);
+        get(key: string, expire: number): unknown;
+        set(key: string, value: unknown): void;
+        save(): void;
+    }
+}
 declare module "file-cache-store" {
-    import { CacheStore } from "cache-store";
+    import { MemCacheStore } from "mem-cache-store";
     export type FileCacheStoreOpts = {
         path?: string;
         autoSave?: boolean;
     };
-    export class FileCacheStore implements CacheStore {
+    export class FileCacheStore extends MemCacheStore {
         readonly opts: FileCacheStoreOpts;
-        private cache;
         readonly cacheFile: string;
         private readonly autoSave;
         constructor(opts?: FileCacheStoreOpts);
-        get(key: string, expire: number): unknown;
         set(key: string, value: unknown): void;
-        save(): void;
+        save(): Promise<void>;
     }
 }
 declare module "cache-proxy" {
@@ -45,16 +53,7 @@ declare module "cache-proxy" {
 }
 declare module "amemo" {
     export * from "cache-store";
+    export * from "mem-cache-store";
     export * from "file-cache-store";
     export * from "cache-proxy";
-}
-declare module "mem-cache-store" {
-    import { CacheStore, Entry } from "cache-store";
-    export class MemCacheStore implements CacheStore {
-        private readonly cache;
-        constructor(cache?: Record<string, Entry>);
-        get(key: string, expire: number): unknown;
-        set(key: string, value: unknown): void;
-        save(): void;
-    }
 }

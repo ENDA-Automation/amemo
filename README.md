@@ -2,9 +2,11 @@
 
 # amemo
 
-**amemo** is an experimental drop-in typesafe memoization library.
+**amemo** is an experimental drop-in typesafe persistent memoization library.
 
-It could be used to save time and resources by caching the results of expensive function calls.
+It could be used to save time and resources by caching the results of expensive function calls, such as paid or rate limited API calls.
+
+An in memory cache is also provided for non-persistent caching for environments where fs is not available.
 
 ## Usage
 
@@ -88,6 +90,20 @@ memoizedType.nested.method({a: 1});       // Not **memoized**
 
 // Save the cache to the disk
 cacheStore.save(); // <-- Commit the cache to the disk
+```
+
+#### MemCacheStore
+
+You can also use an in-memory for non persistent caching.
+
+```typescript
+import {cacheProxy, MemCacheStorage} from 'amemo';
+
+const cacheStore = new MemCacheStorage();
+const complexType = new ComplexType();
+const memoizedType = cacheProxy(complexType, {cacheStore}); // drop-in replacement
+memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
+memoizedType.nested.method({a: 1, b: 2}); // Free real estate
 ```
 
 ### Alternative implementations

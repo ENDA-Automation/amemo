@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
 import { cacheProxy } from "../src/cache-proxy";
+import { MemCacheStore } from "../src/mem-cache-store";
 
 jest.mock("fs");
 
@@ -37,7 +38,7 @@ describe("cacheProxy", () => {
     mockFs.existsSync.mockReturnValue(false);
     mockFs.readFileSync.mockReturnValue("");
   });
-  it("cache calls", async () => {
+  it("must cache calls", async () => {
     expect(true).toBeTruthy();
     let hit = 0;
     let miss = 0;
@@ -81,7 +82,7 @@ describe("cacheProxy", () => {
     expect(c.nested.nested.bar("invalidate again")).toBe(2);
   });
 
-  it("should respect the default expire", () => {
+  it("must respect the default expire", () => {
     const t = new Test();
     const c = cacheProxy(t, {
       defaultExpire: 100,
@@ -93,7 +94,7 @@ describe("cacheProxy", () => {
     expect(c.main()).toBe(1);
   });
 
-  it("should respect the path expire", async () => {
+  it("must respect the path expire", async () => {
     const t = new Test();
     const c = cacheProxy(t, {
       pathExpire: {
@@ -195,5 +196,15 @@ describe("cacheProxy", () => {
     expect(c2.nested.foo()).not.toBeInstanceOf(Promise);
     expect(c2.nested.foo()).toBe(0);
     expect(await c2.nested.foo()).toBe(0);
+  });
+
+  it("must support in memory cache", async () => {
+    const t = new Test();
+    const cacheStore = new MemCacheStore();
+    const c = cacheProxy(t, {
+      cacheStore,
+    });
+    expect(c.main()).toBe(0);
+    expect(c.main()).toBe(0);
   });
 });
