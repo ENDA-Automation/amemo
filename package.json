@@ -1,6 +1,6 @@
 {
   "name": "amemo",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "amemo is an experimental drop-in typesafe memoization library",
   "repository": "https://github.com/enda-automation/amemo",
   "main": "dist/index.js",
@@ -13,7 +13,8 @@
     "prepublish": "tsc",
     "format": "prettier --write src/ tests/",
     "format:check": "prettier --check src/ tests/",
-    "lint": "eslint src/ tests/"
+    "lint": "eslint src/ tests/",
+    "release": "standard-version"
   },
   "keywords": [],
   "author": "Engin Aydogan <engin.aydogan@enda.com>",
@@ -32,6 +33,7 @@
     "jest-mock": "^29.7.0",
     "make-coverage-badge": "^1.2.0",
     "prettier": "^3.2.5",
+    "standard-version": "^9.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.4"
   }
