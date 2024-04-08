@@ -3,7 +3,6 @@ coverage/
 tests/
 .*
 babel.config.cjs
-badges/
 cache.json
 jest.*
-tsconfig,json
+tsconfig.json
