@@ -6,3 +6,4 @@ cache.json
 !dist/index.js
 **/*.d.ts
 !dist/index.d.ts
+!dist/index.js.map

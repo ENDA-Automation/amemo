@@ -15,6 +15,8 @@ class NestedNestedTest {
   public bar(_ = "bar") {
     return this.barCalls++;
   }
+
+  public readonly shouldNotBeCached = "shouldNotBeCached";
 }
 
 class NestedTest {
@@ -209,5 +211,17 @@ describe("cacheProxy", () => {
     });
     expect(c.main()).toBe(0);
     expect(c.main()).toBe(0);
+  });
+
+  it("must not cache non-functions", async () => {
+    const t = new Test();
+    const c = cacheProxy(t);
+    const write = mockFs.writeFileSync.mockImplementation(() => {});
+    expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
+    expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
+    expect(write).toBeCalledTimes(0);
+    expect(c.main()).toBe(0);
+    expect(c.main()).toBe(0);
+    expect(write).toBeCalledTimes(1);
   });
 });
