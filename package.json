@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "A memoization library for JavaScript",
   "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "type": "module",
-  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
-    "build": "esbuild --bundle --platform=node --sourcemap --minify src/cacheProxy.ts --outfile=dist/index.js",
+    "build": "esbuild --bundle --platform=node --sourcemap --minify --format=esm src/cache-proxy.ts --outfile=dist/index.js",
     "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
     "prepublish": "tsc"
   },

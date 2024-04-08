@@ -5,3 +5,4 @@ coverage/
 cache.json
 !dist/index.js
 **/*.d.ts
+!dist/index.d.ts
