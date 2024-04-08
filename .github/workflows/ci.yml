@@ -14,7 +14,7 @@ permissions:
 jobs:
   test-typescript:
     name: TypeScript Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
