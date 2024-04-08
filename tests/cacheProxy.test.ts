@@ -133,7 +133,7 @@ describe("cacheProxy", () => {
     const t = new Test();
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue(
-      '{"/main: []": {"value": 1, "expire": 100}}'
+      '{"/main: []": {"value": 1, "expire": 100}}',
     );
     const c = cacheProxy(t);
     expect(c.main()).toBe(1);
@@ -179,7 +179,7 @@ describe("cacheProxy", () => {
     mockFs.existsSync.mockReturnValue(false);
     mockFs.readFileSync.mockReturnValue("");
     mockFs.writeFileSync.mockImplementation(
-      (file, data) => (mockFile = data as string)
+      (file, data) => (mockFile = data as string),
     );
     const t = new Test();
     const c = cacheProxy(t);
