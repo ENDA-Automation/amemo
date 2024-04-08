@@ -1,6 +1,6 @@
 {
   "name": "amemo",
-  "version": "1.0.2",
+  "version": "1.1.2",
   "description": "amemo is an experimental drop-in typesafe memoization library",
   "repository": "https://github.com/enda-automation/amemo",
   "main": "dist/index.js",
