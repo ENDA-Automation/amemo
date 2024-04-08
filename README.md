@@ -1,3 +1,5 @@
+<img src="badges/coverage.svg" alt="Test coverage score"/>
+
 # amemo
 
 **amemo** is an experimental drop-in typesafe memoization library.
@@ -71,6 +73,22 @@ Reads and parses the cache file synchronously (once).
 #### set
 
 Writes to the cache file synchronously when autoSave is true. Otherwise, save() method must be called by user to actually commit the cache to the disk. If not, cache store will act like an in-memory cache.
+
+#### autoSave
+
+```typescript
+import {cacheProxy} from 'amemo';
+
+const cacheStore = new FileCacheStore({autoSave: false});
+const complexType = new ComplexType();
+const memoizedType = cacheProxy(complexType, {cacheStore}); // drop-in replacement
+memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
+memoizedType.nested.method({a: 1, b: 2}); // Free real estate
+memoizedType.nested.method({a: 1});       // Not **memoized**
+
+// Save the cache to the disk
+cacheStore.save(); // <-- Commit the cache to the disk
+```
 
 ### Alternative implementations
 
