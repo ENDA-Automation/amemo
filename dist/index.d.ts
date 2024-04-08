@@ -4,6 +4,10 @@ declare module "cache-store" {
         set(key: string, value: unknown): void;
         save(): void;
     }
+    export type Entry = {
+        timestamp: number;
+        value: unknown;
+    };
     export const NotFound: unique symbol;
     export const SECOND = 1000;
     export const MINUTE: number;
@@ -43,4 +47,14 @@ declare module "amemo" {
     export * from "cache-store";
     export * from "file-cache-store";
     export * from "cache-proxy";
+}
+declare module "mem-cache-store" {
+    import { CacheStore, Entry } from "cache-store";
+    export class MemCacheStore implements CacheStore {
+        private readonly cache;
+        constructor(cache?: Record<string, Entry>);
+        get(key: string, expire: number): unknown;
+        set(key: string, value: unknown): void;
+        save(): void;
+    }
 }

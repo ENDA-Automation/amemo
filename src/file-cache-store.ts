@@ -1,12 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { CacheStore, NotFound } from "./cache-store";
-
-type Entry = {
-  timestamp: number;
-  value: unknown;
-};
+import { CacheStore, Entry, NotFound } from "./cache-store";
 
 export type FileCacheStoreOpts = {
   path?: string;
@@ -52,7 +47,13 @@ export class FileCacheStore implements CacheStore {
     }
   }
 
-  save() {
+  async save() {
+    for (const [key, entry] of Object.entries(this.cache)) {
+      if (entry.value instanceof Promise) {
+        this.cache[key].value = await entry.value;
+      }
+    }
+
     fs.mkdirSync(path.dirname(this.cacheFile), { recursive: true });
     fs.writeFileSync(this.cacheFile, JSON.stringify(this.cache));
   }

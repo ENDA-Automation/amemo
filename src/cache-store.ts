@@ -4,6 +4,11 @@ export interface CacheStore {
   save(): void;
 }
 
+export type Entry = {
+  timestamp: number;
+  value: unknown;
+};
+
 export const NotFound = Symbol("NotFound");
 
 export const SECOND = 1000;
