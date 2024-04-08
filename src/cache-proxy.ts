@@ -19,7 +19,7 @@ function createProxy<T extends object>(
   opts: CacheProxyOpts,
   proxyCache: ProxyCache<T>,
   wrapperCache: Record<string, any>,
-  path = ""
+  path = "",
 ): T {
   if (proxyCache[path]) {
     return proxyCache[path];
@@ -63,7 +63,7 @@ function createProxy<T extends object>(
         opts,
         proxyCache,
         wrapperCache,
-        currentPath
+        currentPath,
       );
     },
   });
@@ -73,7 +73,7 @@ function createProxy<T extends object>(
 
 export function cacheProxy<T extends object>(
   api: T,
-  opts: CacheProxyOpts = {}
+  opts: CacheProxyOpts = {},
 ): T {
   const { cacheStore = new FileCacheStore() } = opts;
   return createProxy(api, cacheStore, opts, {}, {});
