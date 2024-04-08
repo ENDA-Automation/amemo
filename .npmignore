@@ -1,0 +1,9 @@
+src/
+coverage/
+tests/
+.*
+babel.config.cjs
+badges/
+cache.json
+jest.*
+tsconfig,json

@@ -4,10 +4,12 @@
   "description": "A memoization library for JavaScript",
   "main": "dist/index.js",
   "type": "module",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
-    "build": "esbuild --bundle --platform=node --sourcemap --format=esm src/cacheProxy.ts --outfile=dist/index.js",
-    "coverage": "make-coverage-badge --output-path ./badges/coverage.svg"
+    "build": "esbuild --bundle --platform=node --sourcemap --minify src/cacheProxy.ts --outfile=dist/index.js",
+    "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
+    "prepublish": "tsc"
   },
   "keywords": [],
   "author": "Engin Aydogan <engin.aydogan@enda.com>",

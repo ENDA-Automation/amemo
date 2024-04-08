@@ -4,3 +4,4 @@ node_modules/
 coverage/
 cache.json
 !dist/index.js
+**/*.d.ts

@@ -92,7 +92,7 @@ cacheStore.save(); // <-- Commit the cache to the disk
 
 ### Alternative implementations
 
-Must implement the interface.
+Alternative implementation, say browser compatible interfaces, can be implemented by implementing the CacheStore interface.
 
 ```typescript
 export interface CacheStore {
