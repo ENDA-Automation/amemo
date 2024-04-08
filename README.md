@@ -1,6 +1,8 @@
 # amemo
 
-**amemo** is a typesafe memoization library for Typescript that wraps your objects and functions with a memoization layer.
+**amemo** is an experimental drop-in typesafe memoization library.
+
+It could be used to save time and resources by caching the results of expensive function calls.
 
 ## Usage
 
@@ -8,13 +10,13 @@
 import {cacheProxy} from 'amemo';
 
 const complexType = new ComplexType();
-const memoizedType = cacheProxy(complexType);
+const memoizedType = cacheProxy(complexType); // drop-in replacement
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
 memoizedType.nested.method({a: 1, b: 2}); // Free real estate
-memoizedType.nested.method({a: 1});       // Not memoized
+memoizedType.nested.method({a: 1});       // Not **memoized**
 ```
 
-### API
+## API
 
 Options to configure, if you choose to do so.
 
@@ -26,41 +28,58 @@ export type CacheProxyOpts = {
   // Callback when a cache miss occurs
   onMiss?: (key: string, args: any[]) => void;
 
-  // Logger to use, you can just pass console
-  // It needs info, warn, error methods.
-  logger?: Logger;
-
   // Default expiration time in milliseconds
+  // Default: 1 * DAY
   defaultExpire?: number;
   
   // Expiration time per property path
   // i.e. { 'nested.method': 1000 }
   pathExpire?: Record<string, number>;
   
-  // Cache store options, see below.
-  cacheStoreOpts?: CacheStoreOpts;
+  // Cache store. See below for more information.
+  // default: new FileCacheStore()
+  cacheStore?: CacheStore;
 };
 ```
 
 ```typescript
-export type CacheStoreOpts = {
+export type FileCacheStoreOpts = {
   // Location of the cache file
   // Path will be recursilvely created if it doesn't exist
-  cacheFile?: string; 
+  // Default: './cache.json'
+  path?: string; 
 
-  // If false (default) cache will be saved to disk on each set operation
-  // and synchronously at that (oh the horror).
-  //
-  // If true, cache must be save()d manually, otherwise it won't persist.
-  //
-  // Cache will be attempted to be saved on process.on('exit') as well.
-  //
-  // When perfroamnce is a concern, this should be set to true (so that
-  // each cache set operation is not synchronously written to disk).
-  lazy?: boolean; 
-
-  // Logger to use, you can just pass console
-  // It needs info, warn, error methods.
-  log?: Logger; 
+  // If True the cache will be written to disk on every cache miss.
+  // If False the cache will be written manually by calling the save method.
+  // Default: true
+  autoSave?: boolean;
 };
+```
+
+## Performance
+
+By default the library aims to be extremely easy to use and requires no configuration. It can be used as a drop in replacement for easy gains.
+
+And it must be just fine for most use cases. However, if you are looking for more performance, you can configure the cache store to use a more performant cache store.
+
+### FileCacheStore
+
+#### Constructor
+
+Reads and parses the cache file synchronously (once).
+
+#### set
+
+Writes to the cache file synchronously when autoSave is true. Otherwise, save() method must be called by user to actually commit the cache to the disk. If not, cache store will act like an in-memory cache.
+
+### Alternative implementations
+
+Must implement the interface.
+
+```typescript
+export interface CacheStore {
+  get(key: string, expire: number): unknown;
+  set(key: string, value: unknown): void;
+  save(): void;
+}
 ```

@@ -1,6 +1,6 @@
 import fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
-import { cacheProxy } from "./index";
+import { cacheProxy } from "../src/cacheProxy";
 
 let readFileSync = jest.fn(() => "");
 let existsSync = jest.fn<(typeof fs)["existsSync"]>(() => false);
@@ -28,7 +28,6 @@ class Test {
   public nested = new NestedTest();
   public mainCalls = 0;
   public main(_: string = "foo") {
-    console.log("main called", this.mainCalls);
     return this.mainCalls++;
   }
 }
@@ -150,4 +149,17 @@ describe("cacheProxy", () => {
     expect(c.main()).toBe(0);
     expect(c.main()).toBe(0);
   });
+
+  it("must save the cache", () => {
+    const t = new Test();
+    const c = cacheProxy(t);
+    c.main();
+    c.main();
+    expect(writeFileSync).toBeCalledTimes(1);
+
+    c.nested.foo();
+    expect(writeFileSync).toBeCalledTimes(2);
+  });
+
+  it("must save the cache on exit", () => {});
 });

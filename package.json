@@ -2,11 +2,11 @@
   "name": "amemo",
   "version": "1.0.0",
   "description": "A memoization library for JavaScript",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "test": "jest",
-    "dev": "esbuild *.ts --sourcemap --outdir=. --format=esm --watch"
+    "build": "esbuild --bundle --platform=node --sourcemap --format=esm src/cacheProxy.ts --outfile=dist/index.js"
   },
   "keywords": [],
   "author": "Engin Aydogan <engin.aydogan@enda.com>",
