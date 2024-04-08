@@ -1,16 +1,17 @@
-import fs from "fs";
+import * as fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
-import { cacheProxy } from "../src/cacheProxy";
+import { cacheProxy } from "../src/cache-proxy";
+import { MemCacheStore } from "../src/mem-cache-store";
 
-let readFileSync = jest.fn(() => "");
-let existsSync = jest.fn<(typeof fs)["existsSync"]>(() => false);
-let writeFileSync = jest.fn(() => {});
-let mkdirSync = jest.fn<(typeof fs)["mkdirSync"]>((path) => {});
+jest.mock("fs");
+
+const mockFs = fs as jest.Mocked<typeof fs>;
 
 jest.useFakeTimers();
 
 class NestedNestedTest {
   public barCalls = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public bar(_ = "bar") {
     return this.barCalls++;
   }
@@ -19,7 +20,8 @@ class NestedNestedTest {
 class NestedTest {
   public nested = new NestedNestedTest();
   public fooCalls = 0;
-  public foo(_ = "foo") {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async foo(_ = "foo") {
     return this.fooCalls++;
   }
 }
@@ -27,6 +29,7 @@ class NestedTest {
 class Test {
   public nested = new NestedTest();
   public mainCalls = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public main(_: string = "foo") {
     return this.mainCalls++;
   }
@@ -35,12 +38,10 @@ class Test {
 describe("cacheProxy", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(fs, "readFileSync").mockImplementation(readFileSync);
-    jest.spyOn(fs, "existsSync").mockImplementation(existsSync);
-    jest.spyOn(fs, "writeFileSync").mockImplementation(writeFileSync);
-    jest.spyOn(fs, "mkdirSync").mockImplementation(mkdirSync);
+    mockFs.existsSync.mockReturnValue(false);
+    mockFs.readFileSync.mockReturnValue("");
   });
-  it("cache calls", () => {
+  it("must cache calls", async () => {
     expect(true).toBeTruthy();
     let hit = 0;
     let miss = 0;
@@ -67,14 +68,14 @@ describe("cacheProxy", () => {
     expect(t.nested.fooCalls).toBe(0);
     expect(t.nested.nested.barCalls).toBe(0);
     expect(c.main("invalidate")).toBe(1);
-    expect(c.nested.foo()).toBe(0);
-    expect(c.nested.foo()).toBe(0);
-    expect(c.nested.foo()).toBe(0);
-    expect(c.nested.foo("invalidate")).toBe(1);
-    expect(c.nested.foo("invalidate again")).toBe(2);
-    expect(c.nested.foo("invalidate")).toBe(1);
-    expect(c.nested.foo()).toBe(0);
-    expect(c.nested.foo("invalidate again")).toBe(2);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo("invalidate")).toBe(1);
+    expect(await c.nested.foo("invalidate again")).toBe(2);
+    expect(await c.nested.foo("invalidate")).toBe(1);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo("invalidate again")).toBe(2);
     expect(c.nested.nested.bar()).toBe(0);
     expect(c.nested.nested.bar()).toBe(0);
     expect(c.nested.nested.bar("invalidate")).toBe(1);
@@ -84,7 +85,7 @@ describe("cacheProxy", () => {
     expect(c.nested.nested.bar("invalidate again")).toBe(2);
   });
 
-  it("should respect the default expire", () => {
+  it("must respect the default expire", () => {
     const t = new Test();
     const c = cacheProxy(t, {
       defaultExpire: 100,
@@ -96,7 +97,7 @@ describe("cacheProxy", () => {
     expect(c.main()).toBe(1);
   });
 
-  it("should respect the path expire", () => {
+  it("must respect the path expire", async () => {
     const t = new Test();
     const c = cacheProxy(t, {
       pathExpire: {
@@ -111,14 +112,14 @@ describe("cacheProxy", () => {
     expect(c.main()).toBe(1);
     expect(c.main()).toBe(1);
 
-    expect(c.nested.foo()).toBe(0);
-    expect(c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
     jest.advanceTimersByTime(101);
-    expect(c.nested.foo()).toBe(0);
-    expect(c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
     jest.advanceTimersByTime(101);
-    expect(c.nested.foo()).toBe(1);
-    expect(c.nested.foo()).toBe(1);
+    expect(await c.nested.foo()).toBe(1);
+    expect(await c.nested.foo()).toBe(1);
 
     expect(c.nested.nested.bar()).toBe(0);
     expect(c.nested.nested.bar()).toBe(0);
@@ -134,8 +135,10 @@ describe("cacheProxy", () => {
 
   it("must persist the cache", () => {
     const t = new Test();
-    existsSync.mockReturnValue(true);
-    readFileSync.mockReturnValue('{"/main: []": {"value": 1, "expire": 100}}');
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(
+      '{"/main: []": {"value": 1, "expire": 100}}',
+    );
     const c = cacheProxy(t);
     expect(c.main()).toBe(1);
     expect(c.main()).toBe(1);
@@ -143,23 +146,68 @@ describe("cacheProxy", () => {
 
   it("must handle broken cache", () => {
     const t = new Test();
-    existsSync.mockReturnValue(true);
-    readFileSync.mockReturnValue("garbage");
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue("garbage");
     const c = cacheProxy(t);
     expect(c.main()).toBe(0);
     expect(c.main()).toBe(0);
   });
 
-  it("must save the cache", () => {
+  it("must save the cache", async () => {
     const t = new Test();
     const c = cacheProxy(t);
     c.main();
     c.main();
-    expect(writeFileSync).toBeCalledTimes(1);
+    const w = mockFs.writeFileSync.mockImplementation(() => {});
+    expect(w).toBeCalledTimes(1);
 
-    c.nested.foo();
-    expect(writeFileSync).toBeCalledTimes(2);
+    await c.nested.foo();
+    expect(w).toBeCalledTimes(2);
   });
 
-  it("must save the cache on exit", () => {});
+  it("must handle promises", async () => {
+    const t = new Test();
+    const c = cacheProxy(t);
+    expect(c.nested.nested.bar()).not.toBeInstanceOf(Promise);
+    const r1 = c.nested.foo();
+    expect(r1).toBeInstanceOf(Promise);
+    // expect(await r1).toBe(0);
+    const r2 = await c.nested.foo();
+    expect(r2).toBe(0);
+    const r3 = await c.nested.foo();
+    expect(r3).toBe(0);
+  });
+
+  it("must persist promises", async () => {
+    let mockFile = "";
+    mockFs.existsSync.mockReturnValue(false);
+    mockFs.readFileSync.mockReturnValue("");
+    mockFs.writeFileSync.mockImplementation(
+      (file, data) => (mockFile = data as string),
+    );
+    const t = new Test();
+    const c = cacheProxy(t);
+    expect(c.nested.foo()).toBeInstanceOf(Promise);
+    expect(await c.nested.foo()).toBe(0);
+    expect(await c.nested.foo()).toBe(0);
+    const parsed = JSON.parse(mockFile);
+    expect(parsed["/nested/foo: []"]["value"]).toBe(0);
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(mockFile);
+    const t2 = new Test();
+    const c2 = cacheProxy(t2);
+    expect(c2.nested.foo()).not.toBeInstanceOf(Promise);
+    expect(c2.nested.foo()).toBe(0);
+    expect(await c2.nested.foo()).toBe(0);
+  });
+
+  it("must support in memory cache", async () => {
+    const t = new Test();
+    const cacheStore = new MemCacheStore();
+    const c = cacheProxy(t, {
+      cacheStore,
+    });
+    expect(c.main()).toBe(0);
+    expect(c.main()).toBe(0);
+  });
 });
