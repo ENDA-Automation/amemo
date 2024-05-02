@@ -2,7 +2,7 @@
 
 # amemo
 
-**amemo** is an experimental drop-in typesafe persistent memoization library.
+**amemo** is an experimental drop-in, type safe, persistent (or not), zero-dependency memoization library.
 
 It could be used to save time and resources by caching the results of expensive function calls, such as paid or rate limited API calls.
 
