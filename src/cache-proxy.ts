@@ -1,5 +1,4 @@
 import { CacheStore, DAY, NotFound } from "./cache-store";
-import { FileCacheStore } from "./file-cache-store";
 
 export type CacheProxyOpts = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
