@@ -35,7 +35,7 @@ function createProxy<T extends object>(
         if (wrapperCache[currentPath]) {
           return wrapperCache[currentPath];
         }
-        const binded = p.bind(target);
+        const bound = p.bind(target);
         const {
           defaultExpire = 1 * DAY,
           pathExpire = {},
@@ -52,7 +52,7 @@ function createProxy<T extends object>(
             return cached;
           }
 
-          const result = binded(...args);
+          const result = bound(...args);
           cache.set(key, result);
           onMiss(key, args);
           return result;
