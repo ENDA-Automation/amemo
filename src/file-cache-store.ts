@@ -13,7 +13,7 @@ export class FileCacheStore extends MemCacheStore {
   private readonly autoSave: boolean;
   constructor(public readonly opts: FileCacheStoreOpts = {}) {
     super();
-    this.cacheFile = opts.path ?? "cache.json";
+    this.cacheFile = opts.path ?? ".amemo.json";
     this.autoSave = opts.autoSave ?? true;
     try {
       if (!fs.existsSync(this.cacheFile)) {

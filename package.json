@@ -1,6 +1,6 @@
 {
   "name": "amemo",
-  "version": "1.2.3",
+  "version": "2.0.0",
   "description": "amemo is an experimental drop-in typesafe memoization library",
   "repository": "https://github.com/enda-automation/amemo",
   "main": "dist/index.js",
@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "test": "jest",
-    "build": "esbuild --bundle --platform=node --sourcemap --minify --format=esm src/cache-proxy.ts --outfile=dist/index.js",
+    "build": "esbuild --bundle --platform=node --sourcemap --minify --format=esm src/amemo.ts --outfile=dist/index.js",
     "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
     "prepublish": "tsc",
     "format": "prettier --write src/ tests/",

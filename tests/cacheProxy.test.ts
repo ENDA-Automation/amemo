@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
-import { cacheProxy } from "../src/cache-proxy";
+import { amemo } from "../src/amemo";
 import { MemCacheStore } from "../src/mem-cache-store";
 
 jest.mock("fs");
@@ -37,7 +37,7 @@ class Test {
   }
 }
 
-describe("cacheProxy", () => {
+describe("amemo", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFs.existsSync.mockReturnValue(false);
@@ -48,7 +48,7 @@ describe("cacheProxy", () => {
     let hit = 0;
     let miss = 0;
     const t = new Test();
-    const c = cacheProxy(t, {
+    const c = amemo(t, {
       onHit: () => hit++,
       onMiss: () => miss++,
     });
@@ -89,7 +89,7 @@ describe("cacheProxy", () => {
 
   it("must respect the default expire", () => {
     const t = new Test();
-    const c = cacheProxy(t, {
+    const c = amemo(t, {
       defaultExpire: 100,
     });
     expect(c.main()).toBe(0);
@@ -101,7 +101,7 @@ describe("cacheProxy", () => {
 
   it("must respect the path expire", async () => {
     const t = new Test();
-    const c = cacheProxy(t, {
+    const c = amemo(t, {
       pathExpire: {
         "/main": 100,
         "/nested/foo": 200,
@@ -141,7 +141,7 @@ describe("cacheProxy", () => {
     mockFs.readFileSync.mockReturnValue(
       '{"/main: []": {"value": 1, "expire": 100}}',
     );
-    const c = cacheProxy(t);
+    const c = amemo(t);
     expect(c.main()).toBe(1);
     expect(c.main()).toBe(1);
   });
@@ -150,14 +150,14 @@ describe("cacheProxy", () => {
     const t = new Test();
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue("garbage");
-    const c = cacheProxy(t);
+    const c = amemo(t);
     expect(c.main()).toBe(0);
     expect(c.main()).toBe(0);
   });
 
   it("must save the cache", async () => {
     const t = new Test();
-    const c = cacheProxy(t);
+    const c = amemo(t);
     c.main();
     c.main();
     const w = mockFs.writeFileSync.mockImplementation(() => {});
@@ -169,7 +169,7 @@ describe("cacheProxy", () => {
 
   it("must handle promises", async () => {
     const t = new Test();
-    const c = cacheProxy(t);
+    const c = amemo(t);
     expect(c.nested.nested.bar()).not.toBeInstanceOf(Promise);
     const r1 = c.nested.foo();
     expect(r1).toBeInstanceOf(Promise);
@@ -188,7 +188,7 @@ describe("cacheProxy", () => {
       (file, data) => (mockFile = data as string),
     );
     const t = new Test();
-    const c = cacheProxy(t);
+    const c = amemo(t);
     expect(c.nested.foo()).toBeInstanceOf(Promise);
     expect(await c.nested.foo()).toBe(0);
     expect(await c.nested.foo()).toBe(0);
@@ -197,7 +197,7 @@ describe("cacheProxy", () => {
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue(mockFile);
     const t2 = new Test();
-    const c2 = cacheProxy(t2);
+    const c2 = amemo(t2);
     expect(c2.nested.foo()).not.toBeInstanceOf(Promise);
     expect(c2.nested.foo()).toBe(0);
     expect(await c2.nested.foo()).toBe(0);
@@ -206,7 +206,7 @@ describe("cacheProxy", () => {
   it("must support in memory cache", async () => {
     const t = new Test();
     const cacheStore = new MemCacheStore();
-    const c = cacheProxy(t, {
+    const c = amemo(t, {
       cacheStore,
     });
     expect(c.main()).toBe(0);
@@ -215,7 +215,7 @@ describe("cacheProxy", () => {
 
   it("must not cache non-functions", async () => {
     const t = new Test();
-    const c = cacheProxy(t);
+    const c = amemo(t);
     const write = mockFs.writeFileSync.mockImplementation(() => {});
     expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
     expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
