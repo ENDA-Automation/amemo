@@ -49,9 +49,12 @@ declare module "cache-proxy" {
         pathExpire?: Record<string, number>;
         cacheStore?: CacheStore;
     };
-    export function cacheProxy<T extends object>(api: T, opts?: CacheProxyOpts): T;
+    type ProxyCache<T> = Record<string, T>;
+    export function createProxy<T extends object>(api: T, cache: CacheStore, opts: CacheProxyOpts, proxyCache: ProxyCache<T>, wrapperCache: Record<string, unknown>, path?: string): T;
 }
 declare module "amemo" {
+    import { CacheProxyOpts } from "cache-proxy";
+    export function amemo<T extends object>(api: T, opts?: CacheProxyOpts): T;
     export * from "cache-store";
     export * from "mem-cache-store";
     export * from "file-cache-store";
