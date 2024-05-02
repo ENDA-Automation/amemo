@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "test": "jest",
-    "build": "esbuild --bundle --platform=node --sourcemap --minify --format=esm src/cache-proxy.ts --outfile=dist/index.js",
+    "build": "esbuild --bundle --platform=node --sourcemap --minify --format=esm src/amemo.ts --outfile=dist/index.js",
     "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
     "prepublish": "tsc",
     "format": "prettier --write src/ tests/",

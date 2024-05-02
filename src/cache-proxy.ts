@@ -15,7 +15,7 @@ export type CacheProxyOpts = {
 
 type ProxyCache<T> = Record<string, T>;
 
-function createProxy<T extends object>(
+export function createProxy<T extends object>(
   api: T,
   cache: CacheStore,
   opts: CacheProxyOpts,
@@ -76,12 +76,4 @@ function createProxy<T extends object>(
   });
   proxyCache[path] = proxy;
   return proxy;
-}
-
-export function cacheProxy<T extends object>(
-  api: T,
-  opts: CacheProxyOpts = {},
-): T {
-  const { cacheStore = new FileCacheStore() } = opts;
-  return createProxy(api, cacheStore, opts, {}, {});
 }

@@ -11,10 +11,10 @@ An in memory cache is also provided for non-persistent caching for environments 
 ## Usage
 
 ```typescript
-import {cacheProxy} from 'amemo';
+import {amemo} from 'amemo';
 
 const complexType = new ComplexType();
-const memoizedType = cacheProxy(complexType); // drop-in replacement
+const memoizedType = amemo(complexType); // drop-in replacement
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
 memoizedType.nested.method({a: 1, b: 2}); // Free real estate
 memoizedType.nested.method({a: 1});       // Not **memoized**
@@ -49,8 +49,8 @@ export type CacheProxyOpts = {
 ```typescript
 export type FileCacheStoreOpts = {
   // Location of the cache file
-  // Path will be recursilvely created if it doesn't exist
-  // Default: './cache.json'
+  // Path will be recursively created if it doesn't exist
+  // Default: './.amemo.json'
   path?: string; 
 
   // If True the cache will be written to disk on every cache miss.
@@ -79,17 +79,17 @@ Writes to the cache file synchronously when autoSave is true. Otherwise, save() 
 #### autoSave
 
 ```typescript
-import {cacheProxy} from 'amemo';
+import {amemo, FileCacheStore} from 'amemo';
 
 const cacheStore = new FileCacheStore({autoSave: false});
 const complexType = new ComplexType();
-const memoizedType = cacheProxy(complexType, {cacheStore}); // drop-in replacement
+const memoizedType = amemo(complexType, {cacheStore}); // drop-in replacement
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
 memoizedType.nested.method({a: 1, b: 2}); // Free real estate
 memoizedType.nested.method({a: 1});       // Not **memoized**
 
 // Save the cache to the disk
-cacheStore.save(); // <-- Commit the cache to the disk
+cacheStore.save(); // <-- Commit the cache to the disk, otherwise store will act like a in-memory cache
 ```
 
 #### MemCacheStore
@@ -97,18 +97,18 @@ cacheStore.save(); // <-- Commit the cache to the disk
 You can also use an in-memory for non persistent caching.
 
 ```typescript
-import {cacheProxy, MemCacheStorage} from 'amemo';
+import {amemo, MemCacheStorage} from 'amemo';
 
 const cacheStore = new MemCacheStorage();
 const complexType = new ComplexType();
-const memoizedType = cacheProxy(complexType, {cacheStore}); // drop-in replacement
+const memoizedType = amemo(complexType, {cacheStore}); // drop-in replacement
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
 memoizedType.nested.method({a: 1, b: 2}); // Free real estate
 ```
 
 ### Alternative implementations
 
-Alternative implementation, say browser compatible interfaces, can be implemented by implementing the CacheStore interface.
+Alternative implementation, say a browser compatible interface like LocalStorage or IndexedDB , can be implemented by implementing the CacheStore interface.
 
 ```typescript
 export interface CacheStore {
