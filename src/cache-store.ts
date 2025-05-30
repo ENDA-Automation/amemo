@@ -1,7 +1,8 @@
-export interface CacheStore {
-  get(key: string, expire: number): unknown;
-  set(key: string, value: unknown): void;
-  save(): void;
+export abstract class CacheStore {
+  abstract get(key: string, expire: number): unknown;
+  abstract set(key: string, value: unknown): void;
+  abstract save(): void;
+  abstract clear(): void;
 }
 
 export type Entry = {

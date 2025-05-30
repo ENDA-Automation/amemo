@@ -43,4 +43,9 @@ export class FileCacheStore extends MemCacheStore {
     fs.mkdirSync(path.dirname(this.cacheFile), { recursive: true });
     fs.writeFileSync(this.cacheFile, JSON.stringify(this.cache));
   }
+
+  clear() {
+    super.clear();
+    fs.unlinkSync(this.cacheFile);
+  }
 }

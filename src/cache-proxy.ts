@@ -14,7 +14,11 @@ export type CacheProxyOpts = {
 
 type ProxyCache<T> = Record<string, T>;
 
-export function createProxy<T extends object>(
+export type Fn = (...args: unknown[]) => unknown;
+export type Class = new (...args: unknown[]) => unknown;
+export type Memoizable = object | Fn | Class;
+
+export function createProxy<T extends Memoizable>(
   api: T,
   cache: CacheStore,
   opts: CacheProxyOpts,
@@ -24,6 +28,34 @@ export function createProxy<T extends object>(
 ): T {
   if (proxyCache[path]) {
     return proxyCache[path];
+  }
+
+  if (typeof api === "function") {
+    const currentPath = path + "/" + api.name;
+    const wrapped = (...args: unknown[]): unknown => {
+      const key =
+        currentPath +
+        ": " +
+        JSON.stringify(
+          args.map((a) => {
+            if (a === undefined) return "undefined";
+            if (a === null) return "null";
+            return a;
+          }),
+        );
+      const cached = cache.get(key, opts.defaultExpire ?? 1 * DAY);
+      if (cached !== NotFound) {
+        opts.onHit?.(key, args);
+        return cached;
+      }
+
+      const result = (api as Fn)(...args);
+      cache.set(key, result);
+      opts.onMiss?.(key, args);
+      return result;
+    };
+    proxyCache[path] = wrapped as T;
+    return wrapped as T;
   }
 
   const proxy = new Proxy(api, {

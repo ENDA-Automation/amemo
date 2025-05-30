@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
-import { amemo } from "../src/amemo";
+import { amemo, FileCacheStore } from "../src/amemo.browser";
 import { MemCacheStore } from "../src/mem-cache-store";
 
 jest.mock("fs");
@@ -44,7 +44,6 @@ describe("amemo", () => {
     mockFs.readFileSync.mockReturnValue("");
   });
   it("must cache calls", async () => {
-    expect(true).toBeTruthy();
     let hit = 0;
     let miss = 0;
     const t = new Test();
@@ -141,7 +140,9 @@ describe("amemo", () => {
     mockFs.readFileSync.mockReturnValue(
       '{"/main: []": {"value": 1, "expire": 100}}',
     );
-    const c = amemo(t);
+    const c = amemo(t, {
+      cacheStore: new FileCacheStore(),
+    });
     expect(c.main()).toBe(1);
     expect(c.main()).toBe(1);
   });
@@ -157,7 +158,9 @@ describe("amemo", () => {
 
   it("must save the cache", async () => {
     const t = new Test();
-    const c = amemo(t);
+    const c = amemo(t, {
+      cacheStore: new FileCacheStore(),
+    });
     c.main();
     c.main();
     const w = mockFs.writeFileSync.mockImplementation(() => {});
@@ -188,7 +191,9 @@ describe("amemo", () => {
       (file, data) => (mockFile = data as string),
     );
     const t = new Test();
-    const c = amemo(t);
+    const c = amemo(t, {
+      cacheStore: new FileCacheStore(),
+    });
     expect(c.nested.foo()).toBeInstanceOf(Promise);
     expect(await c.nested.foo()).toBe(0);
     expect(await c.nested.foo()).toBe(0);
@@ -197,7 +202,9 @@ describe("amemo", () => {
     mockFs.existsSync.mockReturnValue(true);
     mockFs.readFileSync.mockReturnValue(mockFile);
     const t2 = new Test();
-    const c2 = amemo(t2);
+    const c2 = amemo(t2, {
+      cacheStore: new FileCacheStore(),
+    });
     expect(c2.nested.foo()).not.toBeInstanceOf(Promise);
     expect(c2.nested.foo()).toBe(0);
     expect(await c2.nested.foo()).toBe(0);
@@ -215,7 +222,9 @@ describe("amemo", () => {
 
   it("must not cache non-functions", async () => {
     const t = new Test();
-    const c = amemo(t);
+    const c = amemo(t, {
+      cacheStore: new FileCacheStore(),
+    });
     const write = mockFs.writeFileSync.mockImplementation(() => {});
     expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
     expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
@@ -224,4 +233,191 @@ describe("amemo", () => {
     expect(c.main()).toBe(0);
     expect(write).toBeCalledTimes(1);
   });
+
+  it("must be able to cache simple functions too in addition to methods", async () => {
+    let i = 0;
+    function foo(key: string) {
+      return key + i++;
+    }
+
+    const c = amemo(foo);
+    const r1 = c("foo");
+    const r2 = c("foo");
+    expect(r1).toBe("foo0");
+    expect(r1).toBe(r2);
+    expect(c("bar")).toBe("bar1");
+    expect(c("foo")).toBe("foo0"); // should still be cached
+    expect(c("baz")).toBe("baz2");
+  });
+
+  it("must cache async functions", async () => {
+    let i = 0;
+    async function asyncFoo(key: string) {
+      return key + i++;
+    }
+
+    const c = amemo(asyncFoo);
+    const r1 = await c("foo");
+    const r2 = await c("foo");
+    expect(r1).toBe("foo0");
+    expect(r1).toBe(r2);
+    expect(await c("bar")).toBe("bar1");
+    expect(await c("foo")).toBe("foo0"); // should still be cached
+  });
+
+  it("must cache functions with complex return types", () => {
+    let i = 0;
+    function complexFoo(key: string) {
+      return { key, value: i++, nested: { count: i } };
+    }
+
+    const c = amemo(complexFoo);
+    const r1 = c("foo");
+    const r2 = c("foo");
+    expect(r1).toEqual({ key: "foo", value: 0, nested: { count: 1 } });
+    expect(r1).toBe(r2); // should be exact same reference
+    expect(c("bar")).toEqual({ key: "bar", value: 1, nested: { count: 2 } });
+  });
+
+  it("must cache functions with multiple parameters", () => {
+    let i = 0;
+    function multiFoo(a: string, b: number, c: boolean) {
+      return `${a}-${b}-${c}-${i++}`;
+    }
+
+    const c = amemo(multiFoo);
+    const r1 = c("test", 42, true);
+    const r2 = c("test", 42, true);
+    expect(r1).toBe("test-42-true-0");
+    expect(r1).toBe(r2);
+    expect(c("test", 42, false)).toBe("test-42-false-1");
+    expect(c("test", 43, true)).toBe("test-43-true-2");
+    expect(c("test", 42, true)).toBe("test-42-true-0"); // original cached
+  });
+
+  it("must cache functions with no parameters", () => {
+    let i = 0;
+    function noParamFoo() {
+      return `result-${i++}`;
+    }
+
+    const c = amemo(noParamFoo);
+    const r1 = c();
+    const r2 = c();
+    expect(r1).toBe("result-0");
+    expect(r1).toBe(r2);
+  });
+
+  it("must respect expiration for cached functions", () => {
+    let i = 0;
+    function expireFoo(key: string) {
+      return key + i++;
+    }
+
+    const c = amemo(expireFoo, {
+      defaultExpire: 100,
+    });
+    expect(c("foo")).toBe("foo0");
+    expect(c("foo")).toBe("foo0");
+    jest.advanceTimersByTime(101);
+    expect(c("foo")).toBe("foo1");
+    expect(c("foo")).toBe("foo1");
+  });
+
+  it("must support hit/miss callbacks for cached functions", () => {
+    let hit = 0;
+    let miss = 0;
+    let i = 0;
+    function callbackFoo(key: string) {
+      return key + i++;
+    }
+
+    const c = amemo(callbackFoo, {
+      onHit: () => hit++,
+      onMiss: () => miss++,
+    });
+
+    expect(c("foo")).toBe("foo0");
+    expect(hit).toBe(0);
+    expect(miss).toBe(1);
+
+    expect(c("foo")).toBe("foo0");
+    expect(hit).toBe(1);
+    expect(miss).toBe(1);
+
+    expect(c("bar")).toBe("bar1");
+    expect(hit).toBe(1);
+    expect(miss).toBe(2);
+  });
+
+  it("must persist cached functions to file", () => {
+    let i = 0;
+    function persistFoo(key: string) {
+      return key + i++;
+    }
+
+    const c = amemo(persistFoo, {
+      cacheStore: new FileCacheStore(),
+    });
+    c("foo");
+    c("bar");
+
+    const writeCall = mockFs.writeFileSync.mock.calls[1];
+    expect(writeCall).toBeDefined();
+    const cacheData = JSON.parse(writeCall[1] as string);
+    expect(cacheData['/persistFoo: ["foo"]']).toBeDefined();
+    expect(cacheData['/persistFoo: ["bar"]']).toBeDefined();
+  });
+
+  it("must work with in-memory cache store for functions", () => {
+    let i = 0;
+    function memFoo(key: string) {
+      return key + i++;
+    }
+
+    const cacheStore = new MemCacheStore();
+    const c = amemo(memFoo, { cacheStore });
+
+    expect(c("foo")).toBe("foo0");
+    expect(c("foo")).toBe("foo0");
+    expect(c("bar")).toBe("bar1");
+  });
+
+  it("must handle function caching with undefined and null parameters", () => {
+    let i = 0;
+    function nullableFoo(key?: string | null) {
+      return `${key}-${i++}`;
+    }
+
+    const c = amemo(nullableFoo);
+    expect(c(undefined)).toBe("undefined-0");
+    expect(c(undefined)).toBe("undefined-0");
+    console.log(mockFs.writeFileSync.mock.calls);
+    expect(c(null)).toBe("null-1");
+    expect(c(null)).toBe("null-1");
+    expect(c("test")).toBe("test-2");
+    expect(c("test")).toBe("test-2");
+  });
+});
+
+it("must handle caching multiple different objects", async () => {
+  const obj1 = amemo({
+    fn: () => "Foo",
+  });
+  const obj2 = amemo({
+    fn: () => "Bar",
+  });
+  expect(obj1.fn()).toBe("Foo");
+  expect(obj2.fn()).toBe("Bar");
+
+  const objX = {
+    fn: () => "Foo",
+  };
+
+  const objXM = amemo(objX);
+  expect(objXM.fn()).toBe("Foo");
+  objX.fn = () => "Bar";
+  const objXM2 = amemo(objX);
+  expect(objXM.fn()).toBe("Foo");
+  expect(objXM2.fn()).toBe("Bar");
 });
