@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { describe, beforeEach, it, jest, expect } from "@jest/globals";
-import { amemo, FileCacheStore } from "../src/amemo.browser";
+import { amemo, FileCacheStore } from "../src/amemo.node";
 import { MemCacheStore } from "../src/mem-cache-store";
 
 jest.mock("fs");
