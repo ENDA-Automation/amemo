@@ -1,14 +1,36 @@
 {
   "name": "amemo",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "amemo is an experimental drop-in typesafe memoization library",
   "repository": "https://github.com/enda-automation/amemo",
-  "main": "dist/index.js",
+  "main": "dist/index.node.js",
+  "module": "dist/index.browser.js",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./dist/index.node.js",
+        "default": "./dist/index.node.js",
+        "types": "./dist/index.node.d.ts"
+      },
+      "browser": {
+        "import": "./dist/index.browser.js",
+        "default": "./dist/index.browser.js",
+        "types": "./dist/index.d.ts"
+      },
+      "default": "./dist/index.node.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "browser": {
+    "./dist/index.node.js": "./dist/index.browser.js"
+  },
   "typings": "dist/index.d.ts",
   "type": "module",
   "scripts": {
     "test": "jest",
-    "build": "esbuild --bundle --platform=node --sourcemap --minify --format=esm src/amemo.ts --outfile=dist/index.js",
+    "build:node": "esbuild src/amemo.node.ts --bundle --platform=node --minify --format=esm  --outfile=dist/index.node.js",
+    "build:browser": "esbuild src/amemo.browser.ts --bundle --platform=browser --minify --format=esm --outfile=dist/index.browser.js",
+    "build": "npm run build:node && npm run build:browser",
     "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
     "prepublish": "tsc",
     "format": "prettier --write src/ tests/",

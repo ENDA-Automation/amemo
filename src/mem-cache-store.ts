@@ -22,4 +22,8 @@ export class MemCacheStore implements CacheStore {
   }
 
   save() {}
+
+  clear() {
+    this.cache = {};
+  }
 }
