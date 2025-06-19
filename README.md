@@ -2,13 +2,16 @@
 
 # amemo
 
-**amemo** is an experimental drop-in, type safe, persistent (or not), zero-dependency memoization library.
+**amemo** is an experimental drop-in, type-safe, persistent (or not), zero-dependency memoization library.
 
-It could be used to save time and resources by caching the results of expensive function calls, such as paid or rate limited API calls.
+It can be used to save time and resources by caching the results of expensive function calls, paid or rate-limited API calls.
 
-An in memory cache is also provided for non-persistent caching for environments where fs is not available.
+An in-memory cache is also provided for non-persistent caching in environments where the file system is not available.
 
-It should work both in Node.js and browser environments, but FileCacheStore is only available in Node.js. In browser environments, you can use MemCacheStorage or implement your own CacheStore interface. When MemCacheStorage is used, the cache will not be persistent and will be lost when the page is reloaded.
+It works in both Node.js and browser environments, but FileCacheStore is only available in Node.js. In browser environments, you can use MemCacheStore or implement your own CacheStore interface. When MemCacheStore is used, the cache will not be persistent and will be lost when the page is reloaded.
+
+> [!WARNING]
+> If the function being cached has side effects (i.e., it modifies an input object), these side effects won't run when the function result is served from cache.
 
 ## Usage
 
@@ -18,13 +21,13 @@ import {amemo} from 'amemo';
 const complexType = new ComplexType();
 const memoizedType = amemo(complexType); // drop-in replacement
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
-memoizedType.nested.method({a: 1, b: 2}); // Free real estate
-memoizedType.nested.method({a: 1});       // Not **memoized**
+memoizedType.nested.method({a: 1, b: 2}); // Cache hit - no execution
+memoizedType.nested.method({a: 1});       // Different arguments - not cached
 ```
 
 ## API
 
-Options to configure, if you choose to do so.
+Configuration options, if you choose to customize the behavior:
 
 ```typescript
 export type CacheProxyOpts = {
@@ -51,12 +54,12 @@ export type CacheProxyOpts = {
 ```typescript
 export type FileCacheStoreOpts = {
   // Location of the cache file
-  // Path will be recursively created if it doesn't exist
+  // Directory will be created recursively if it doesn't exist
   // Default: './.amemo.json'
   path?: string; 
 
-  // If True the cache will be written to disk on every cache miss.
-  // If False the cache will be written manually by calling the save method.
+  // If true, the cache will be written to disk on every cache miss
+  // If false, the cache must be saved manually by calling the save() method
   // Default: true
   autoSave?: boolean;
 };
@@ -64,19 +67,19 @@ export type FileCacheStoreOpts = {
 
 ## Performance
 
-By default the library aims to be extremely easy to use and requires no configuration. It can be used as a drop in replacement for easy gains.
+By default, the library aims to be extremely easy to use and requires no configuration. It can be used as a drop-in replacement for easy performance gains.
 
-And it must be just fine for most use cases. However, if you are looking for more performance, you can configure the cache store to use a more performant cache store.
+It should be sufficient for most use cases, given that cached operations inherently  take long time, the caching mechanism cost should be negligible. However, if you need more performance, you can configure the cache store to use a more performant implementation.
 
 ### FileCacheStore
 
 #### Constructor
 
-Reads and parses the cache file synchronously (once).
+Reads and parses the cache file synchronously (once during initialization).
 
 #### set
 
-Writes to the cache file synchronously when autoSave is true. Otherwise, save() method must be called by user to actually commit the cache to the disk. If not, cache store will act like an in-memory cache.
+Writes to the cache file synchronously when autoSave is true. Otherwise, the save() method must be called manually to commit the cache to disk. If not called, the cache store will act like an in-memory cache.
 
 #### autoSave
 
@@ -85,32 +88,32 @@ import {amemo, FileCacheStore} from 'amemo';
 
 const cacheStore = new FileCacheStore({autoSave: false});
 const complexType = new ComplexType();
-const memoizedType = amemo(complexType, {cacheStore}); // drop-in replacement
+const memoizedType = amemo(complexType, {cacheStore});
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
-memoizedType.nested.method({a: 1, b: 2}); // Free real estate
-memoizedType.nested.method({a: 1});       // Not **memoized**
+memoizedType.nested.method({a: 1, b: 2}); // Cache hit - no execution
+memoizedType.nested.method({a: 1});       // Different arguments - not cached
 
-// Save the cache to the disk
-cacheStore.save(); // <-- Commit the cache to the disk, otherwise store will act like a in-memory cache
+// Manually save the cache to disk
+cacheStore.save(); // Commit the cache to disk, otherwise it acts like in-memory cache
 ```
 
 #### MemCacheStore
 
-You can also use an in-memory for non persistent caching.
+You can also use an in-memory store for non-persistent caching:
 
 ```typescript
-import {amemo, MemCacheStorage} from 'amemo';
+import {amemo, MemCacheStore} from 'amemo';
 
-const cacheStore = new MemCacheStorage();
+const cacheStore = new MemCacheStore();
 const complexType = new ComplexType();
-const memoizedType = amemo(complexType, {cacheStore}); // drop-in replacement
+const memoizedType = amemo(complexType, {cacheStore});
 memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
-memoizedType.nested.method({a: 1, b: 2}); // Free real estate
+memoizedType.nested.method({a: 1, b: 2}); // Cache hit - no execution
 ```
 
 ### Alternative implementations
 
-Alternative implementation, say a browser compatible interface like LocalStorage or IndexedDB , can be implemented by implementing the CacheStore interface.
+Alternative implementations, such as browser-compatible interfaces like LocalStorage or IndexedDB, can be created by implementing the CacheStore interface:
 
 ```typescript
 export interface CacheStore {
