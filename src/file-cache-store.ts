@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { MemCacheStore } from "./mem-cache-store";
+import { replacer, reviver } from "./utils";
 
 export type FileCacheStoreOpts = {
   path?: string;
@@ -20,7 +21,7 @@ export class FileCacheStore extends MemCacheStore {
         return;
       }
       const data = fs.readFileSync(this.cacheFile, "utf8");
-      super.cache = JSON.parse(data);
+      super.cache = JSON.parse(data, reviver);
     } catch (e) {
       // ignore
     }
@@ -36,12 +37,19 @@ export class FileCacheStore extends MemCacheStore {
   async save() {
     for (const [key, entry] of Object.entries(this.cache)) {
       if (entry.value instanceof Promise) {
-        this.cache[key].value = await entry.value;
+        this.cache[key].promise = true;
+        try {
+          this.cache[key].value = await entry.value;
+        } catch (e) {
+          // Error object is not serializable, so we just remove it
+          this.cache[key].value = e;
+          this.cache[key].rejected = true;
+        }
       }
     }
 
     fs.mkdirSync(path.dirname(this.cacheFile), { recursive: true });
-    fs.writeFileSync(this.cacheFile, JSON.stringify(this.cache));
+    fs.writeFileSync(this.cacheFile, JSON.stringify(this.cache, replacer));
   }
 
   clear() {

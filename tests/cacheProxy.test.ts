@@ -11,9 +11,15 @@ jest.useFakeTimers();
 
 class NestedNestedTest {
   public barCalls = 0;
+  public throwCalls = 0;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public bar(_ = "bar") {
     return this.barCalls++;
+  }
+
+  public async throws() {
+    this.throwCalls++;
+    throw new Error("This method should not be cached");
   }
 
   public readonly shouldNotBeCached = "shouldNotBeCached";
@@ -184,30 +190,83 @@ describe("amemo", () => {
   });
 
   it("must persist promises", async () => {
-    let mockFile = "";
+    const mockFile: Record<string, string> = {};
     mockFs.existsSync.mockReturnValue(false);
-    mockFs.readFileSync.mockReturnValue("");
-    mockFs.writeFileSync.mockImplementation(
-      (file, data) => (mockFile = data as string),
+    mockFs.readFileSync.mockImplementation(
+      (file) => mockFile[file as string] as any,
     );
+    mockFs.writeFileSync.mockImplementation(
+      (file, data) => (mockFile[file as string] = data as string),
+    );
+
     const t = new Test();
+    let cacheStore = new FileCacheStore();
     const c = amemo(t, {
-      cacheStore: new FileCacheStore(),
+      cacheStore,
     });
     expect(c.nested.foo()).toBeInstanceOf(Promise);
     expect(await c.nested.foo()).toBe(0);
     expect(await c.nested.foo()).toBe(0);
-    const parsed = JSON.parse(mockFile);
+    const parsed = JSON.parse(mockFile[".amemo.json"]);
     expect(parsed["/nested/foo: []"]["value"]).toBe(0);
     mockFs.existsSync.mockReturnValue(true);
-    mockFs.readFileSync.mockReturnValue(mockFile);
+    mockFs.readFileSync.mockReturnValue(mockFile[".amemo.json"]);
     const t2 = new Test();
+    cacheStore = new FileCacheStore();
     const c2 = amemo(t2, {
-      cacheStore: new FileCacheStore(),
+      cacheStore,
     });
-    expect(c2.nested.foo()).not.toBeInstanceOf(Promise);
-    expect(c2.nested.foo()).toBe(0);
+    const p = c2.nested.foo();
+    expect(p).toBeInstanceOf(Promise);
+    expect(p.then).toBeDefined();
     expect(await c2.nested.foo()).toBe(0);
+  });
+
+  it("must persist rejected promises", async () => {
+    const mockFile: Record<string, string> = {};
+    mockFs.existsSync.mockImplementation((file) => {
+      return mockFile[file as string] !== undefined;
+    });
+
+    mockFs.readFileSync.mockImplementation(
+      (file) => mockFile[file as string] as any,
+    );
+    mockFs.writeFileSync.mockImplementation(
+      (file, data) => (mockFile[file as string] = data as string),
+    );
+    const t = new Test();
+    let cacheStore = new FileCacheStore();
+    const c = amemo(t, {
+      cacheStore,
+    });
+
+    try {
+      await c.nested.nested.throws();
+      expect(true).toBe(false);
+    } catch (e) {
+      expect(e.message).toBe("This method should not be cached");
+      expect(c.nested.nested.throwCalls).toBe(1);
+      expect(t.nested.nested.throwCalls).toBe(1);
+    }
+
+    try {
+      await c.nested.nested.throws();
+      expect(true).toBe(false); // should not reach here
+    } catch (e) {
+      expect(e.message).toBe("This method should not be cached");
+      expect(c.nested.nested.throwCalls).toBe(1);
+    }
+    cacheStore = new FileCacheStore();
+    const c2 = amemo(new Test(), {
+      cacheStore,
+    });
+    try {
+      await c2.nested.nested.throws();
+      expect(true).toBe(false); // should not reach here
+    } catch (e) {
+      expect(e.message).toBe("This method should not be cached");
+      expect(c2.nested.nested.throwCalls).toBe(0);
+    }
   });
 
   it("must support in memory cache", async () => {
