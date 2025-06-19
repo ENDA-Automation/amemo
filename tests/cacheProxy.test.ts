@@ -183,9 +183,7 @@ describe("amemo", () => {
 
   it("must persist the cache", () => {
     const t = new Test();
-    mockFileSystem.setupWithCache(
-      '{"/main: []": {"value": 1, "expire": 100}}',
-    );
+    mockFileSystem.setupWithCache('{"/main: []": {"value": 1, "expire": 100}}');
     const c = amemo(t, {
       cacheStore: new FileCacheStore(),
     });
@@ -241,7 +239,7 @@ describe("amemo", () => {
     expect(await c.nested.foo()).toBe(0);
     const parsed = JSON.parse(mockFileSystem.getFile(".amemo.json")!);
     expect(parsed["/nested/foo: []"]["value"]).toBe(0);
-    
+
     mockFileSystem.setupWithCache(mockFileSystem.getFile(".amemo.json")!);
     const t2 = new Test();
     cacheStore = new FileCacheStore();
