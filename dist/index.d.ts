@@ -52,7 +52,7 @@ declare module "amemo.browser" {
     export * from "cache-proxy";
 }
 declare module "utils" {
-    export function replacer(key: string, value: any): any;
+    export function replacer(key: string, value: unknown): {} | null;
     export function reviver(key: string, value: any): any;
 }
 declare module "file-cache-store" {
