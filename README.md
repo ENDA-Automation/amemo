@@ -6,6 +6,8 @@
 
 It can be used to save time and resources by caching the results of expensive function calls, paid or rate-limited API calls.
 
+It is designed to work with deeply nested objecst such as API SDKs, sync or async methods.
+
 An in-memory cache is also provided for non-persistent caching in environments where the file system is not available.
 
 It works in both Node.js and browser environments, but FileCacheStore is only available in Node.js. In browser environments, you can use MemCacheStore or implement your own CacheStore interface. When MemCacheStore is used, the cache will not be persistent and will be lost when the page is reloaded.
@@ -72,6 +74,13 @@ By default, the library aims to be extremely easy to use and requires no configu
 It should be sufficient for most use cases, given that cached operations inherently  take long time, the caching mechanism cost should be negligible. However, if you need more performance, you can configure the cache store to use a more performant implementation.
 
 ### FileCacheStore
+
+> [!WARNING]
+> FileCacheStore tries to resolve all cached results that are promises.
+>
+> TODO: Add a timeout option
+>
+> If that proves to be a problem, turning auto save off might help.
 
 #### Constructor
 
