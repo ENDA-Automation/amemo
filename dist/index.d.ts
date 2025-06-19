@@ -8,6 +8,8 @@ declare module "cache-store" {
     export type Entry = {
         timestamp: number;
         value: unknown;
+        promise?: boolean;
+        rejected?: boolean;
     };
     export const NotFound: unique symbol;
     export const SECOND = 1000;
@@ -48,6 +50,10 @@ declare module "amemo.browser" {
     export * from "cache-store";
     export * from "mem-cache-store";
     export * from "cache-proxy";
+}
+declare module "utils" {
+    export function replacer(key: string, value: any): any;
+    export function reviver(key: string, value: any): any;
 }
 declare module "file-cache-store" {
     import { MemCacheStore } from "mem-cache-store";

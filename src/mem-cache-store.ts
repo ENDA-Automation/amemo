@@ -11,6 +11,12 @@ export class MemCacheStore implements CacheStore {
     if (Date.now() - entry.timestamp > expire) {
       return NotFound;
     }
+    if (entry.promise) {
+      if (entry.rejected) {
+        return Promise.reject(entry.value);
+      }
+      return Promise.resolve(entry.value);
+    }
     return entry.value;
   }
 

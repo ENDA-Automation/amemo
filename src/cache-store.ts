@@ -8,6 +8,8 @@ export abstract class CacheStore {
 export type Entry = {
   timestamp: number;
   value: unknown;
+  promise?: boolean;
+  rejected?: boolean;
 };
 
 export const NotFound = Symbol("NotFound");
