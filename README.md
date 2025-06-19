@@ -8,6 +8,8 @@ It could be used to save time and resources by caching the results of expensive 
 
 An in memory cache is also provided for non-persistent caching for environments where fs is not available.
 
+It should work both in Node.js and browser environments, but FileCacheStore is only available in Node.js. In browser environments, you can use MemCacheStorage or implement your own CacheStore interface. When MemCacheStorage is used, the cache will not be persistent and will be lost when the page is reloaded.
+
 ## Usage
 
 ```typescript

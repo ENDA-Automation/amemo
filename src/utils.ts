@@ -1,4 +1,5 @@
-export function replacer(key: string, value: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function replacer(key: string, value: unknown) {
   if (value instanceof Date)
     return { __type: "Date", value: value.toISOString() };
   if (value instanceof RegExp)
@@ -23,6 +24,7 @@ export function replacer(key: string, value: any) {
   return value;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function reviver(key: string, value: any) {
   if (value && typeof value === "object" && value.__type) {
     switch (value.__type) {

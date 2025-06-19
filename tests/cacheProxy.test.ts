@@ -9,6 +9,47 @@ const mockFs = fs as jest.Mocked<typeof fs>;
 
 jest.useFakeTimers();
 
+class MockFileSystem {
+  private files: Record<string, string> = {};
+
+  setup() {
+    mockFs.existsSync.mockImplementation((file) => {
+      return this.files[file as string] !== undefined;
+    });
+
+    mockFs.readFileSync.mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (file) => this.files[file as string] as any,
+    );
+
+    mockFs.writeFileSync.mockImplementation(
+      (file, data) => (this.files[file as string] = data as string),
+    );
+  }
+
+  setFile(path: string, content: string) {
+    this.files[path] = content;
+  }
+
+  getFile(path: string): string | undefined {
+    return this.files[path];
+  }
+
+  clear() {
+    this.files = {};
+  }
+
+  setupEmpty() {
+    mockFs.existsSync.mockReturnValue(false);
+    mockFs.readFileSync.mockReturnValue("");
+  }
+
+  setupWithCache(cacheContent: string) {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(cacheContent);
+  }
+}
+
 class NestedNestedTest {
   public barCalls = 0;
   public throwCalls = 0;
@@ -44,10 +85,12 @@ class Test {
 }
 
 describe("amemo", () => {
+  let mockFileSystem: MockFileSystem;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFs.existsSync.mockReturnValue(false);
-    mockFs.readFileSync.mockReturnValue("");
+    mockFileSystem = new MockFileSystem();
+    mockFileSystem.setupEmpty();
   });
   it("must cache calls", async () => {
     let hit = 0;
@@ -138,12 +181,9 @@ describe("amemo", () => {
     expect(c.nested.nested.bar()).toBe(1);
   });
 
-  jest.mock("fs");
-
   it("must persist the cache", () => {
     const t = new Test();
-    mockFs.existsSync.mockReturnValue(true);
-    mockFs.readFileSync.mockReturnValue(
+    mockFileSystem.setupWithCache(
       '{"/main: []": {"value": 1, "expire": 100}}',
     );
     const c = amemo(t, {
@@ -155,8 +195,7 @@ describe("amemo", () => {
 
   it("must handle broken cache", () => {
     const t = new Test();
-    mockFs.existsSync.mockReturnValue(true);
-    mockFs.readFileSync.mockReturnValue("garbage");
+    mockFileSystem.setupWithCache("garbage");
     const c = amemo(t);
     expect(c.main()).toBe(0);
     expect(c.main()).toBe(0);
@@ -190,14 +229,7 @@ describe("amemo", () => {
   });
 
   it("must persist promises", async () => {
-    const mockFile: Record<string, string> = {};
-    mockFs.existsSync.mockReturnValue(false);
-    mockFs.readFileSync.mockImplementation(
-      (file) => mockFile[file as string] as any,
-    );
-    mockFs.writeFileSync.mockImplementation(
-      (file, data) => (mockFile[file as string] = data as string),
-    );
+    mockFileSystem.setup();
 
     const t = new Test();
     let cacheStore = new FileCacheStore();
@@ -207,10 +239,10 @@ describe("amemo", () => {
     expect(c.nested.foo()).toBeInstanceOf(Promise);
     expect(await c.nested.foo()).toBe(0);
     expect(await c.nested.foo()).toBe(0);
-    const parsed = JSON.parse(mockFile[".amemo.json"]);
+    const parsed = JSON.parse(mockFileSystem.getFile(".amemo.json")!);
     expect(parsed["/nested/foo: []"]["value"]).toBe(0);
-    mockFs.existsSync.mockReturnValue(true);
-    mockFs.readFileSync.mockReturnValue(mockFile[".amemo.json"]);
+    
+    mockFileSystem.setupWithCache(mockFileSystem.getFile(".amemo.json")!);
     const t2 = new Test();
     cacheStore = new FileCacheStore();
     const c2 = amemo(t2, {
@@ -223,17 +255,8 @@ describe("amemo", () => {
   });
 
   it("must persist rejected promises", async () => {
-    const mockFile: Record<string, string> = {};
-    mockFs.existsSync.mockImplementation((file) => {
-      return mockFile[file as string] !== undefined;
-    });
+    mockFileSystem.setup();
 
-    mockFs.readFileSync.mockImplementation(
-      (file) => mockFile[file as string] as any,
-    );
-    mockFs.writeFileSync.mockImplementation(
-      (file, data) => (mockFile[file as string] = data as string),
-    );
     const t = new Test();
     let cacheStore = new FileCacheStore();
     const c = amemo(t, {
@@ -451,7 +474,6 @@ describe("amemo", () => {
     const c = amemo(nullableFoo);
     expect(c(undefined)).toBe("undefined-0");
     expect(c(undefined)).toBe("undefined-0");
-    console.log(mockFs.writeFileSync.mock.calls);
     expect(c(null)).toBe("null-1");
     expect(c(null)).toBe("null-1");
     expect(c("test")).toBe("test-2");
