@@ -15,16 +15,22 @@ It works in both Node.js and browser environments, but FileCacheStore is only av
 > [!WARNING]
 > If the function being cached has side effects (i.e., it modifies an input object), these side effects won't run when the function result is served from cache.
 
+## TODO
+
+- Option to NOT store rejections
+- Option for timeout on waiting for promise resolution before persisting it
+- Option to return cache and update in background (second call will return updated data -- always coming one step behind but quickly so)
+
 ## Usage
 
 ```typescript
-import {amemo} from 'amemo';
+import { amemo } from "amemo";
 
 const complexType = new ComplexType();
 const memoizedType = amemo(complexType); // drop-in replacement
-memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
-memoizedType.nested.method({a: 1, b: 2}); // Cache hit - no execution
-memoizedType.nested.method({a: 1});       // Different arguments - not cached
+memoizedType.nested.method({ a: 1, b: 2 }); // This will be memoized
+memoizedType.nested.method({ a: 1, b: 2 }); // Cache hit - no execution
+memoizedType.nested.method({ a: 1 }); // Different arguments - not cached
 ```
 
 ## API
@@ -33,7 +39,7 @@ Configuration options, if you choose to customize the behavior:
 
 ```typescript
 export type CacheProxyOpts = {
-   // Callback when a cache hit occurs
+  // Callback when a cache hit occurs
   onHit?: (key: string, args: any[]) => void;
 
   // Callback when a cache miss occurs
@@ -42,11 +48,11 @@ export type CacheProxyOpts = {
   // Default expiration time in milliseconds
   // Default: 1 * DAY
   defaultExpire?: number;
-  
+
   // Expiration time per property path
   // i.e. { 'nested.method': 1000 }
   pathExpire?: Record<string, number>;
-  
+
   // Cache store. See below for more information.
   // default: new FileCacheStore()
   cacheStore?: CacheStore;
@@ -58,7 +64,7 @@ export type FileCacheStoreOpts = {
   // Location of the cache file
   // Directory will be created recursively if it doesn't exist
   // Default: './.amemo.json'
-  path?: string; 
+  path?: string;
 
   // If true, the cache will be written to disk on every cache miss
   // If false, the cache must be saved manually by calling the save() method
@@ -71,7 +77,7 @@ export type FileCacheStoreOpts = {
 
 By default, the library aims to be extremely easy to use and requires no configuration. It can be used as a drop-in replacement for easy performance gains.
 
-It should be sufficient for most use cases, given that cached operations inherently  take long time, the caching mechanism cost should be negligible. However, if you need more performance, you can configure the cache store to use a more performant implementation.
+It should be sufficient for most use cases, given that cached operations inherently take long time, the caching mechanism cost should be negligible. However, if you need more performance, you can configure the cache store to use a more performant implementation.
 
 ### FileCacheStore
 
@@ -93,14 +99,14 @@ Writes to the cache file synchronously when autoSave is true. Otherwise, the sav
 #### autoSave
 
 ```typescript
-import {amemo, FileCacheStore} from 'amemo';
+import { amemo, FileCacheStore } from "amemo";
 
-const cacheStore = new FileCacheStore({autoSave: false});
+const cacheStore = new FileCacheStore({ autoSave: false });
 const complexType = new ComplexType();
-const memoizedType = amemo(complexType, {cacheStore});
-memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
-memoizedType.nested.method({a: 1, b: 2}); // Cache hit - no execution
-memoizedType.nested.method({a: 1});       // Different arguments - not cached
+const memoizedType = amemo(complexType, { cacheStore });
+memoizedType.nested.method({ a: 1, b: 2 }); // This will be memoized
+memoizedType.nested.method({ a: 1, b: 2 }); // Cache hit - no execution
+memoizedType.nested.method({ a: 1 }); // Different arguments - not cached
 
 // Manually save the cache to disk
 cacheStore.save(); // Commit the cache to disk, otherwise it acts like in-memory cache
@@ -111,13 +117,13 @@ cacheStore.save(); // Commit the cache to disk, otherwise it acts like in-memory
 You can also use an in-memory store for non-persistent caching:
 
 ```typescript
-import {amemo, MemCacheStore} from 'amemo';
+import { amemo, MemCacheStore } from "amemo";
 
 const cacheStore = new MemCacheStore();
 const complexType = new ComplexType();
-const memoizedType = amemo(complexType, {cacheStore});
-memoizedType.nested.method({a: 1, b: 2}); // This will be memoized
-memoizedType.nested.method({a: 1, b: 2}); // Cache hit - no execution
+const memoizedType = amemo(complexType, { cacheStore });
+memoizedType.nested.method({ a: 1, b: 2 }); // This will be memoized
+memoizedType.nested.method({ a: 1, b: 2 }); // Cache hit - no execution
 ```
 
 ### Alternative implementations

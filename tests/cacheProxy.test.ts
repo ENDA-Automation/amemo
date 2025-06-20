@@ -9,7 +9,7 @@ const mockFs = fs as jest.Mocked<typeof fs>;
 
 jest.useFakeTimers();
 
-class MockFileSystem {
+export class MockFileSystem {
   private files: Record<string, string> = {};
 
   setup() {
@@ -25,6 +25,14 @@ class MockFileSystem {
     mockFs.writeFileSync.mockImplementation(
       (file, data) => (this.files[file as string] = data as string),
     );
+
+    mockFs.unlinkSync.mockImplementation((file) => {
+      if (this.files[file as string] === undefined) {
+        // ENOENT
+        throw new Error(`ENOENT: no such file or directory, unlink '${file}'`);
+      }
+      delete this.files[file as string];
+    });
   }
 
   setFile(path: string, content: string) {

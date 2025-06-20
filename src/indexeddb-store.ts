@@ -65,5 +65,11 @@ export class MinimalKVStore extends CacheStore {
     await this.transaction("readwrite", (store) => store.clear());
   }
 
+  purge(expire: number): number {
+    // IndexedDB does not support expiration natively.
+    // This method is a placeholder and does nothing.
+    return 0;
+  }
+
   save() {}
 }

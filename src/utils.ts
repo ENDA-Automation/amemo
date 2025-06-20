@@ -10,6 +10,20 @@ export function replacer(key: string, value: unknown) {
   if (typeof value === "bigint")
     return { __type: "BigInt", value: value.toString() };
   if (value === undefined) return { __type: "undefined" };
+  if (Buffer.isBuffer(value))
+    return { __type: "Buffer", value: value.toString("base64") };
+  if (value instanceof ArrayBuffer) {
+    const base64String = Buffer.from(value).toString("base64");
+    console.log(
+      "ArrayBuffer serialized to base64:",
+      base64String.length,
+      "bytes",
+    );
+    return {
+      __type: "ArrayBuffer",
+      value: base64String,
+    };
+  }
   if (value instanceof Promise) {
     // it would have been better if we could serialize the promise
     // replacer is synchronous, so we cannot await the promise here
@@ -45,6 +59,15 @@ export function reviver(key: string, value: any) {
         return BigInt(value.value);
       case "undefined":
         return undefined;
+      case "Buffer":
+        return Buffer.from(value.value, "base64");
+      case "ArrayBuffer": {
+        const buffer = Buffer.from(value.value, "base64");
+        return buffer.buffer.slice(
+          buffer.byteOffset,
+          buffer.byteOffset + buffer.byteLength,
+        );
+      }
       case "Error": {
         const error = new Error(value.message);
         error.stack = value.stack;

@@ -54,6 +54,8 @@ export class FileCacheStore extends MemCacheStore {
 
   clear() {
     super.clear();
-    fs.unlinkSync(this.cacheFile);
+    if (fs.existsSync(this.cacheFile)) {
+      fs.unlinkSync(this.cacheFile);
+    }
   }
 }

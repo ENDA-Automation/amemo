@@ -1,3 +1,4 @@
+import { describe, it, expect } from "@jest/globals";
 import { replacer, reviver } from "../src/utils";
 
 describe("utils.ts", () => {
@@ -65,6 +66,30 @@ describe("utils.ts", () => {
       });
     });
 
+    it("should serialize a Buffer object", () => {
+      const buffer = Buffer.from("Hello World", "utf8");
+      expect(replacer("", buffer)).toEqual({
+        __type: "Buffer",
+        value: buffer.toString("base64"),
+      });
+    });
+
+    it("should serialize an ArrayBuffer object", () => {
+      const buffer = new ArrayBuffer(8);
+      const view = new Uint8Array(buffer);
+      view[0] = 72; // 'H'
+      view[1] = 101; // 'e'
+      view[2] = 108; // 'l'
+      view[3] = 108; // 'l'
+      view[4] = 111; // 'o'
+      const actual = replacer("", buffer);
+      const expected = Buffer.from(buffer).toString("base64");
+      expect(actual).toEqual({
+        __type: "ArrayBuffer",
+        value: expected,
+      });
+    });
+
     it("should return the value as-is for unsupported types", () => {
       const value = { key: "value" };
       expect(replacer("", value)).toEqual(value);
@@ -118,6 +143,33 @@ describe("utils.ts", () => {
       expect(deserializedError).toBeInstanceOf(Error);
       expect(deserializedError.message).toBe(error.message);
       expect(deserializedError.stack).toBe(error.stack);
+    });
+
+    it("should deserialize a Buffer object", () => {
+      const buffer = Buffer.from("Hello World", "utf8");
+      const base64Value = buffer.toString("base64");
+      expect(reviver("", { __type: "Buffer", value: base64Value })).toEqual(
+        buffer,
+      );
+    });
+
+    it("should deserialize an ArrayBuffer object", () => {
+      const buffer = new ArrayBuffer(8);
+      const view = new Uint8Array(buffer);
+      view[0] = 72; // 'H'
+      view[1] = 101; // 'e'
+      view[2] = 108; // 'l'
+      view[3] = 108; // 'l'
+      view[4] = 111; // 'o'
+      const base64Value = Buffer.from(buffer).toString("base64");
+      const deserializedBuffer = reviver("", {
+        __type: "ArrayBuffer",
+        value: base64Value,
+      });
+      expect(deserializedBuffer).toBeInstanceOf(ArrayBuffer);
+      expect(new Uint8Array(deserializedBuffer)).toEqual(
+        new Uint8Array(buffer),
+      );
     });
 
     it("should return the value as-is for unsupported types", () => {

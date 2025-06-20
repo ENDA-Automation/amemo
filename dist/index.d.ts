@@ -4,6 +4,7 @@ declare module "cache-store" {
         abstract set(key: string, value: unknown): void;
         abstract save(): void;
         abstract clear(): void;
+        abstract purge(expire: number): number;
     }
     export type Entry = {
         timestamp: number;
@@ -38,10 +39,11 @@ declare module "mem-cache-store" {
     export class MemCacheStore implements CacheStore {
         protected cache: Record<string, Entry>;
         constructor(cache?: Record<string, Entry>);
-        get(key: string, expire: number): unknown;
+        get(key: string, expire: number, purge?: boolean): unknown;
         set(key: string, value: unknown): void;
         save(): void;
         clear(): void;
+        purge(expire: number): number;
     }
 }
 declare module "amemo.browser" {
@@ -98,6 +100,7 @@ declare module "indexeddb-store" {
         get<T>(key: string): Promise<T | undefined>;
         delete(key: string): Promise<void>;
         clear(): Promise<void>;
+        purge(expire: number): number;
         save(): void;
     }
 }

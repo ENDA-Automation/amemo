@@ -3,6 +3,7 @@ export abstract class CacheStore {
   abstract set(key: string, value: unknown): void;
   abstract save(): void;
   abstract clear(): void;
+  abstract purge(expire: number): number;
 }
 
 export type Entry = {
