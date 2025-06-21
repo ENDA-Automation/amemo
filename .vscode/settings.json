@@ -1,3 +1,7 @@
 {
-  "cSpell.words": ["amemo"]
+  "cSpell.words": ["amemo"],
+  "jest.runMode": {
+    "coverage": true,
+    "type": "watch"
+  }
 }

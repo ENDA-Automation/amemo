@@ -215,10 +215,10 @@ describe("amemo", () => {
     c.main();
     c.main();
     const w = mockFs.writeFileSync.mockImplementation(() => {});
-    expect(w).toBeCalledTimes(1);
+    expect(w).toHaveBeenCalledTimes(1);
 
     await c.nested.foo();
-    expect(w).toBeCalledTimes(2);
+    expect(w).toHaveBeenCalledTimes(2);
   });
 
   it("must handle promises", async () => {
@@ -273,7 +273,8 @@ describe("amemo", () => {
       await c.nested.nested.throws();
       expect(true).toBe(false);
     } catch (e) {
-      expect(e.message).toBe("This method should not be cached");
+      const e2 = e as Error;
+      expect(e2.message).toBe("This method should not be cached");
       expect(c.nested.nested.throwCalls).toBe(1);
       expect(t.nested.nested.throwCalls).toBe(1);
     }
@@ -282,7 +283,8 @@ describe("amemo", () => {
       await c.nested.nested.throws();
       expect(true).toBe(false); // should not reach here
     } catch (e) {
-      expect(e.message).toBe("This method should not be cached");
+      const e2 = e as Error;
+      expect(e2.message).toBe("This method should not be cached");
       expect(c.nested.nested.throwCalls).toBe(1);
     }
     cacheStore = new FileCacheStore();
@@ -293,7 +295,8 @@ describe("amemo", () => {
       await c2.nested.nested.throws();
       expect(true).toBe(false); // should not reach here
     } catch (e) {
-      expect(e.message).toBe("This method should not be cached");
+      const e2 = e as Error;
+      expect(e2.message).toBe("This method should not be cached");
       expect(c2.nested.nested.throwCalls).toBe(0);
     }
   });
@@ -316,10 +319,10 @@ describe("amemo", () => {
     const write = mockFs.writeFileSync.mockImplementation(() => {});
     expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
     expect(c.nested.nested.shouldNotBeCached).toBe("shouldNotBeCached");
-    expect(write).toBeCalledTimes(0);
+    expect(write).toHaveBeenCalledTimes(0);
     expect(c.main()).toBe(0);
     expect(c.main()).toBe(0);
-    expect(write).toBeCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(1);
   });
 
   it("must be able to cache simple functions too in addition to methods", async () => {

@@ -22,6 +22,7 @@ export class FileCacheStore extends MemCacheStore {
       }
       const data = fs.readFileSync(this.cacheFile, "utf8");
       super.cache = JSON.parse(data, reviver);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // ignore
     }
