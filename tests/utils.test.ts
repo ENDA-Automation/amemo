@@ -1,3 +1,4 @@
+import { describe, it, expect } from "@jest/globals";
 import { replacer, reviver } from "../src/utils";
 
 describe("utils.ts", () => {

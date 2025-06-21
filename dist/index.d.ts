@@ -1,4 +1,4 @@
-declare module "cache-store" {
+declare module "src/cache-store" {
     export abstract class CacheStore {
         abstract get(key: string, expire: number): unknown;
         abstract set(key: string, value: unknown): void;
@@ -18,8 +18,8 @@ declare module "cache-store" {
     export const DAY: number;
     export const WEEK: number;
 }
-declare module "cache-proxy" {
-    import { CacheStore } from "cache-store";
+declare module "src/cache-proxy" {
+    import { CacheStore } from "src/cache-store";
     export type CacheProxyOpts = {
         onHit?: (key: string, args: any[]) => void;
         onMiss?: (key: string, args: any[]) => void;
@@ -33,8 +33,8 @@ declare module "cache-proxy" {
     export type Memoizable = object | Fn | Class;
     export function createProxy<T extends Memoizable>(api: T, cache: CacheStore, opts: CacheProxyOpts, proxyCache: ProxyCache<T>, wrapperCache: Record<string, unknown>, path?: string): T;
 }
-declare module "mem-cache-store" {
-    import { CacheStore, Entry } from "cache-store";
+declare module "src/mem-cache-store" {
+    import { CacheStore, Entry } from "src/cache-store";
     export class MemCacheStore implements CacheStore {
         protected cache: Record<string, Entry>;
         constructor(cache?: Record<string, Entry>);
@@ -44,19 +44,19 @@ declare module "mem-cache-store" {
         clear(): void;
     }
 }
-declare module "amemo.browser" {
-    import { CacheProxyOpts, Memoizable } from "cache-proxy";
+declare module "src/amemo.browser" {
+    import { CacheProxyOpts, Memoizable } from "src/cache-proxy";
     export function amemo<T extends Memoizable>(api: T, opts?: CacheProxyOpts): T;
-    export * from "cache-store";
-    export * from "mem-cache-store";
-    export * from "cache-proxy";
+    export * from "src/cache-store";
+    export * from "src/mem-cache-store";
+    export * from "src/cache-proxy";
 }
-declare module "utils" {
+declare module "src/utils" {
     export function replacer(key: string, value: unknown): {} | null;
     export function reviver(key: string, value: any): any;
 }
-declare module "file-cache-store" {
-    import { MemCacheStore } from "mem-cache-store";
+declare module "src/file-cache-store" {
+    import { MemCacheStore } from "src/mem-cache-store";
     export type FileCacheStoreOpts = {
         path?: string;
         autoSave?: boolean;
@@ -71,23 +71,23 @@ declare module "file-cache-store" {
         clear(): void;
     }
 }
-declare module "amemo.node" {
-    import { CacheProxyOpts, Memoizable } from "cache-proxy";
+declare module "src/amemo.node" {
+    import { CacheProxyOpts, Memoizable } from "src/cache-proxy";
     export function amemo<T extends Memoizable>(api: T, opts?: CacheProxyOpts): T;
-    export * from "cache-store";
-    export * from "mem-cache-store";
-    export * from "file-cache-store";
-    export * from "cache-proxy";
+    export * from "src/cache-store";
+    export * from "src/mem-cache-store";
+    export * from "src/file-cache-store";
+    export * from "src/cache-proxy";
 }
-declare module "amemo" {
-    export * from "cache-store";
-    export * from "mem-cache-store";
-    export * from "file-cache-store";
-    export * from "cache-proxy";
-    export * from "amemo.node";
+declare module "src/amemo" {
+    export * from "src/cache-store";
+    export * from "src/mem-cache-store";
+    export * from "src/file-cache-store";
+    export * from "src/cache-proxy";
+    export * from "src/amemo.node";
 }
-declare module "indexeddb-store" {
-    import { CacheStore } from "cache-store";
+declare module "src/indexeddb-store" {
+    import { CacheStore } from "src/cache-store";
     export class MinimalKVStore extends CacheStore {
         private dbName;
         private storeName;
@@ -101,3 +101,5 @@ declare module "indexeddb-store" {
         save(): void;
     }
 }
+declare module "tests/cacheProxy.test" { }
+declare module "tests/utils.test" { }

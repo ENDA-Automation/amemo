@@ -1,0 +1,8 @@
+// filepath: /Users/engin/Code/amemo/tsconfig.eslint.json
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*", "tests/**/*", "eslint.config.ts"],
+  "compilerOptions": {
+    "moduleResolution": "nodenext"
+  }
+}
